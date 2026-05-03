@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>LIVE Phone Stream</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <main id="root">
+    <video id="camera" autoplay playsinline muted></video>
+
+    <div class="shade"></div>
+
+    <section id="camera-error" class="camera-error hidden">
+      <div class="error-card">
+        <div class="big-icon">📷</div>
+        <h1>Камера не включилась</h1>
+        <p>Разреши доступ к камере. На GitHub Pages камера работает, потому что там HTTPS.</p>
+      </div>
+    </section>
+
+    <header class="topbar">
+      <div class="left-top">
+        <div class="live-row">
+          <span class="live-badge">● LIVE</span>
+          <span id="timer" class="small-pill">00:00</span>
+        </div>
+        <div class="context-card">
+          <span>Сейчас</span>
+          <strong id="context-label">Просто общаюсь</strong>
+        </div>
+      </div>
+
+      <div class="right-top">
+        <div class="viewer-pill">👥 <span id="viewers">10,4K</span></div>
+        <button id="settings-btn" class="circle-btn">⚙️</button>
+      </div>
+    </header>
+
+    <aside id="settings-panel" class="settings-panel hidden">
+      <h2>ИИ-контекст чата</h2>
+      <p>Выбери ситуацию, чтобы комментарии были по теме.</p>
+      <div id="scenario-buttons" class="scenario-grid"></div>
+    </aside>
+
+    <div class="side-actions">
+      <button id="like-btn" class="side-btn">
+        <span>♥</span>
+        <b id="likes">1,2K</b>
+      </button>
+      <button id="chat-action-btn" class="side-btn">
+        <span>💬</span>
+        <b>чат</b>
+      </button>
+      <button id="donate-action-btn" class="side-btn">
+        <span>💸</span>
+        <b id="donation-total">0₽</b>
+      </button>
+    </div>
+
+    <section id="chat" class="chat"></section>
+
+    <footer class="bottom-area">
+      <div id="action-chips" class="action-chips"></div>
+
+      <form id="message-form" class="message-form">
+        <button type="button" class="round-input-btn">🎙️</button>
+        <input id="message-input" autocomplete="off" placeholder="Написать в чат или действие..." />
+        <button type="submit" class="send-btn">➤</button>
+      </form>
+    </footer>
+  </main>
+
+  <script src="./js/app.js"></script>
+</body>
+</html>
