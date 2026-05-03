@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Vibe Phone Camera</title>
+  <style>
+    :root{
+      --bg:#080706; --panel:rgba(18,16,14,.74); --panel2:rgba(255,255,255,.075);
+      --text:#f6eee8; --muted:#b6aaa1; --red:#d11718; --amber:#f2b56b; --line:rgba(255,255,255,.12);
+      --shadow: 0 24px 80px rgba(0,0,0,.55);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;margin:0;background:radial-gradient(circle at 20% 0%,#372015 0,#120c09 35%,#030303 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(209,23,24,.13),transparent 28%,rgba(242,181,107,.08) 62%,transparent),repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);mix-blend-mode:screen;opacity:.68;z-index:8}
+    body:after{content:"";position:fixed;inset:-10%;pointer-events:none;background:radial-gradient(circle,transparent 48%,rgba(0,0,0,.78) 100%);z-index:9}
+    .app{position:relative;height:100%;width:100%;display:grid;grid-template-rows:auto 1fr auto;z-index:1}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 14px 10px;background:linear-gradient(180deg,rgba(0,0,0,.62),transparent);z-index:10}
+    .brand{display:flex;align-items:center;gap:10px;min-width:0}.dot{width:12px;height:12px;border-radius:50%;background:var(--red);box-shadow:0 0 18px var(--red),0 0 2px #fff inset}.brand h1{font-size:14px;line-height:1;margin:0;letter-spacing:.18em;text-transform:uppercase;white-space:nowrap}.brand p{font-size:11px;color:var(--muted);margin:3px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .status{font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ffddd8;border:1px solid rgba(209,23,24,.45);background:rgba(209,23,24,.14);padding:7px 9px;border-radius:999px;letter-spacing:.08em;white-space:nowrap}.status.idle{color:#e6d3c4;border-color:var(--line);background:rgba(255,255,255,.07)}
+    .stage{position:relative;margin:0 12px;border:1px solid var(--line);border-radius:30px;overflow:hidden;background:#000;box-shadow:var(--shadow);isolation:isolate}.stage:before{content:"";position:absolute;inset:0;border-radius:30px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),inset 0 0 80px rgba(0,0,0,.48);z-index:5;pointer-events:none}.stage:after{content:"REC  •  MOBILE UNIT  •  NOIR MODE";position:absolute;left:14px;right:14px;bottom:12px;z-index:6;font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.18em;color:rgba(255,255,255,.72);text-shadow:0 2px 8px #000;pointer-events:none}
+    video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(var(--mirror,1));background:#000}.hidden{opacity:0;pointer-events:none}.show{opacity:1}.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:20}.flash.on{animation:flash .36s ease}@keyframes flash{0%{opacity:0}18%{opacity:.92}100%{opacity:0}}
+    .frameHud{position:absolute;inset:14px;pointer-events:none;z-index:7}.corner{position:absolute;width:34px;height:34px;border-color:rgba(255,255,255,.65)}.tl{top:0;left:0;border-top:2px solid;border-left:2px solid}.tr{top:0;right:0;border-top:2px solid;border-right:2px solid}.bl{bottom:0;left:0;border-bottom:2px solid;border-left:2px solid}.br{bottom:0;right:0;border-bottom:2px solid;border-right:2px solid}.date{position:absolute;top:6px;right:8px;font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(255,255,255,.78);text-shadow:0 2px 8px #000}.modeText{position:absolute;left:8px;bottom:22px;font:800 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#fff;text-shadow:0 2px 8px #000;letter-spacing:.13em}
+    .controls{z-index:11;padding:12px 12px calc(14px + env(safe-area-inset-bottom));display:grid;gap:10px;background:linear-gradient(0deg,rgba(0,0,0,.76),transparent)}.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.mode{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:18px;padding:10px 8px;min-height:54px;font-weight:800;font-size:12px;letter-spacing:.02em;backdrop-filter:blur(16px)}.mode small{display:block;font-weight:600;color:var(--muted);font-size:10px;margin-top:3px}.mode.active{border-color:rgba(209,23,24,.78);background:linear-gradient(180deg,rgba(209,23,24,.28),rgba(255,255,255,.08));box-shadow:0 0 0 1px rgba(209,23,24,.1),0 10px 35px rgba(209,23,24,.14)}
+    .actions{display:grid;grid-template-columns:64px 1fr 64px;align-items:center;gap:12px}.round{height:56px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.09);color:#fff;font-size:22px;box-shadow:0 10px 30px rgba(0,0,0,.26);backdrop-filter:blur(16px)}.shutter{width:86px;height:86px;border-radius:50%;border:6px solid rgba(255,255,255,.86);justify-self:center;background:radial-gradient(circle,#fff 0 38%,#e9e0db 39% 49%,#d11718 50% 57%,rgba(255,255,255,.12) 58%);box-shadow:0 0 0 5px rgba(255,255,255,.1),0 18px 50px rgba(0,0,0,.48)}.shutter.recording{animation:pulse 1s infinite;background:radial-gradient(circle,#d11718 0 42%,#380806 43% 53%,rgba(255,255,255,.15) 54%)}@keyframes pulse{50%{transform:scale(.94);box-shadow:0 0 0 10px rgba(209,23,24,.12),0 18px 50px rgba(0,0,0,.48)}}
+    .subactions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pill{border:1px solid var(--line);background:rgba(10,10,10,.35);color:#fff;padding:12px 12px;border-radius:18px;font-weight:800;backdrop-filter:blur(16px)}.pill span{color:var(--amber)}
+    .toast{position:fixed;left:16px;right:16px;bottom:calc(180px + env(safe-area-inset-bottom));z-index:30;background:rgba(14,12,10,.9);border:1px solid var(--line);border-radius:18px;padding:12px 14px;color:#fff;box-shadow:var(--shadow);transform:translateY(20px);opacity:0;transition:.25s}.toast.show{transform:translateY(0);opacity:1}.permission{position:absolute;inset:0;display:grid;place-items:center;padding:26px;text-align:center;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.9));z-index:12}.permission h2{margin:0 0 10px;font-size:24px}.permission p{margin:0 0 18px;color:var(--muted);line-height:1.45}.permission button{border:0;border-radius:18px;padding:14px 18px;font-weight:900;color:white;background:linear-gradient(135deg,#d11718,#9b1010 55%,#3a3120);box-shadow:0 18px 55px rgba(209,23,24,.24)}
+    .desktopHint{display:none}@media (min-width:760px){body{display:grid;place-items:center}.app{max-width:430px;max-height:920px;border-radius:36px;overflow:hidden;border:1px solid var(--line);box-shadow:0 40px 120px #000;background:#080706}.desktopHint{display:block;position:fixed;right:20px;bottom:20px;color:rgba(255,255,255,.45);font-size:12px;z-index:20}.stage{margin:0 14px}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand"><div class="dot"></div><div><h1>Vibe Cam</h1><p>phone camera / 2000s crime / 2010 clean</p></div></div>
+      <div id="status" class="status idle">READY</div>
+    </header>
+
+    <section class="stage" id="stage">
+      <video id="video" playsinline autoplay muted></video>
+      <canvas id="canvas" class="show"></canvas>
+      <div class="flash" id="flash"></div>
+      <div class="frameHud">
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <div class="date" id="dateHud">--:--:--</div>
+        <div class="modeText" id="modeHud">NORMAL</div>
+      </div>
+      <div class="permission" id="permission">
+        <div><h2>Включи камеру</h2><p>Откроется камера телефона. Фото и видео сохраняются прямо на устройство через скачивание.</p><button id="startBtn">СТАРТ КАМЕРЫ</button></div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <div class="modes">
+        <button class="mode active" data-mode="normal">Обычная<small>телефон</small></button>
+        <button class="mode" data-mode="y2000">2000 год<small>серо / пиксели</small></button>
+        <button class="mode" data-mode="y2010">2010 год<small>digital snap</small></button>
+      </div>
+      <div class="actions">
+        <button class="round" id="flipBtn" title="Сменить камеру">↺</button>
+        <button class="shutter" id="photoBtn" title="Фото"></button>
+        <button class="round" id="recordBtn" title="Видео">●</button>
+      </div>
+      <div class="subactions">
+        <button class="pill" id="photoHint">тап центр: <span>фото</span></button>
+        <button class="pill" id="videoHint">красная: <span>видео</span></button>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="toast"></div>
+  <div class="desktopHint">Совет: на телефоне открой через HTTPS или localhost, иначе браузер может запретить камеру.</div>
+
+<script>
+(() => {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const startBtn = document.getElementById('startBtn');
+  const permission = document.getElementById('permission');
+  const statusEl = document.getElementById('status');
+  const modeHud = document.getElementById('modeHud');
+  const dateHud = document.getElementById('dateHud');
+  const flash = document.getElementById('flash');
+  const toast = document.getElementById('toast');
+  const photoBtn = document.getElementById('photoBtn');
+  const recordBtn = document.getElementById('recordBtn');
+  const flipBtn = document.getElementById('flipBtn');
+  const stage = document.getElementById('stage');
+
+  let stream = null, facingMode = 'environment', mode = 'normal';
+  let raf = null, recorder = null, chunks = [], recording = false;
+
+  const modeNames = { normal: 'NORMAL', y2000: '2000 CRIME CAM', y2010: '2010 DIGITAL' };
+  const safeName = () => new Date().toISOString().replaceAll(':','-').replaceAll('.','-');
+  const showToast = msg => { toast.textContent = msg; toast.classList.add('show'); clearTimeout(showToast.t); showToast.t = setTimeout(()=>toast.classList.remove('show'), 2400); };
+  const setStatus = (txt, live=false) => { statusEl.textContent = txt; statusEl.classList.toggle('idle', !live); };
+
+  function fitCanvas(){
+    const rect = stage.getBoundingClientRect();
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+  }
+
+  async function startCamera(){
+    try{
+      if(stream) stream.getTracks().forEach(t=>t.stop());
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width:{ideal:1920}, height:{ideal:1080} }, audio: true
+      });
+      video.srcObject = stream;
+      await video.play();
+      permission.style.display = 'none';
+      stage.style.setProperty('--mirror', facingMode === 'user' ? -1 : 1);
+      fitCanvas();
+      setStatus('LIVE', true);
+      draw();
+    } catch(err){
+      console.error(err);
+      setStatus('BLOCKED');
+      showToast('Камера не запустилась. Нужен доступ к камере и HTTPS/localhost.');
+    }
+  }
+
+  function draw(){
+    cancelAnimationFrame(raf);
+    const loop = () => {
+      const w = canvas.width, h = canvas.height;
+      ctx.save();
+      ctx.clearRect(0,0,w,h);
+      ctx.drawImage(video, 0, 0, w, h);
+      if(mode === 'y2000') filter2000(w,h);
+      if(mode === 'y2010') filter2010(w,h);
+      drawOverlay(w,h);
+      ctx.restore();
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+  }
+
+  function filter2000(w,h){
+    // Pixelated, gray-green, old TV compression, noir/crime vibe.
+    const scale = 0.18;
+    const sw = Math.max(80, Math.floor(w*scale));
+    const sh = Math.max(80, Math.floor(h*scale));
+    const off = document.createElement('canvas'); off.width = sw; off.height = sh;
+    const o = off.getContext('2d', { willReadFrequently:true });
+    o.drawImage(canvas,0,0,sw,sh);
+    const img = o.getImageData(0,0,sw,sh), d = img.data;
+    for(let i=0;i<d.length;i+=4){
+      const gray = (d[i]*0.28 + d[i+1]*0.48 + d[i+2]*0.24);
+      const noise = (Math.random()-.5)*34;
+      d[i]   = Math.max(0, Math.min(255, gray*1.04 + 17 + noise));
+      d[i+1] = Math.max(0, Math.min(255, gray*.95 + 9 + noise));
+      d[i+2] = Math.max(0, Math.min(255, gray*.78 + 3 + noise));
+    }
+    o.putImageData(img,0,0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(off,0,0,w,h);
+    ctx.imageSmoothingEnabled = true;
+    ctx.fillStyle='rgba(35,50,38,.18)'; ctx.fillRect(0,0,w,h);
+    ctx.globalCompositeOperation='screen'; ctx.fillStyle='rgba(209,23,24,.06)'; ctx.fillRect(0,0,w,h); ctx.globalCompositeOperation='source-over';
+    ctx.fillStyle='rgba(0,0,0,.22)';
+    for(let y=0;y<h;y+=4) ctx.fillRect(0,y,w,1);
+  }
+
+  function filter2010(w,h){
+    // Early smartphone / compact digital: sharper, higher contrast, slightly cool, mild vignette.
+    const img = ctx.getImageData(0,0,w,h), d = img.data;
+    for(let i=0;i<d.length;i+=4){
+      let r=d[i], g=d[i+1], b=d[i+2];
+      r = (r-128)*1.12+128+5; g = (g-128)*1.08+128+4; b = (b-128)*1.16+128+13;
+      d[i]=Math.max(0,Math.min(255,r)); d[i+1]=Math.max(0,Math.min(255,g)); d[i+2]=Math.max(0,Math.min(255,b));
+    }
+    ctx.putImageData(img,0,0);
+    ctx.globalAlpha=.16; ctx.drawImage(canvas,-1,0,w,h); ctx.globalAlpha=1;
+  }
+
+  function drawOverlay(w,h){
+    const t = new Date();
+    dateHud.textContent = t.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    if(mode === 'y2000'){
+      ctx.fillStyle='rgba(0,0,0,.18)'; ctx.fillRect(0,0,w,h);
+      ctx.font = `${Math.max(16,w/38)}px monospace`; ctx.fillStyle='rgba(255,255,255,.68)';
+      ctx.fillText(t.toLocaleDateString('ru-RU'), 18, 34);
+      ctx.fillStyle='rgba(209,23,24,.75)'; ctx.fillRect(w-76, 24, 12, 12);
+      ctx.fillStyle='rgba(255,255,255,.74)'; ctx.fillText('REC', w-58, 36);
+    }
+    const grd = ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.22,w/2,h/2,Math.max(w,h)*.7);
+    grd.addColorStop(0,'rgba(0,0,0,0)'); grd.addColorStop(1, mode === 'normal' ? 'rgba(0,0,0,.22)' : 'rgba(0,0,0,.46)');
+    ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
+  }
+
+  function setMode(next){
+    mode = next; modeHud.textContent = modeNames[mode];
+    document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active', b.dataset.mode === mode));
+    showToast('Режим: ' + modeNames[mode]);
+  }
+
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob); const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+  }
+
+  function takePhoto(){
+    if(!stream){ showToast('Сначала включи камеру.'); return; }
+    flash.classList.remove('on'); void flash.offsetWidth; flash.classList.add('on');
+    canvas.toBlob(blob => {
+      if(blob){ downloadBlob(blob, `vibecam-${mode}-${safeName()}.jpg`); showToast('Фото сохранено.'); }
+    }, 'image/jpeg', mode === 'y2000' ? .74 : .94);
+  }
+
+  function pickMime(){
+    const list = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+    return list.find(x => MediaRecorder.isTypeSupported(x)) || '';
+  }
+
+  function startRecording(){
+    if(!stream){ showToast('Сначала включи камеру.'); return; }
+    try{
+      chunks = [];
+      const visual = canvas.captureStream(30);
+      const audio = stream.getAudioTracks()[0];
+      if(audio) visual.addTrack(audio);
+      recorder = new MediaRecorder(visual, { mimeType: pickMime(), videoBitsPerSecond: mode === 'y2000' ? 1800000 : 4500000 });
+      recorder.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type:'video/webm' });
+        downloadBlob(blob, `vibecam-${mode}-${safeName()}.webm`);
+        showToast('Видео сохранено.');
+      };
+      recorder.start(); recording = true; recordBtn.classList.add('recording'); photoBtn.classList.add('recording'); setStatus('REC', true);
+    } catch(err){ console.error(err); showToast('Запись видео не поддержалась этим браузером.'); }
+  }
+  function stopRecording(){
+    if(recorder && recording){ recorder.stop(); }
+    recording = false; recordBtn.classList.remove('recording'); photoBtn.classList.remove('recording'); setStatus('LIVE', true);
+  }
+
+  startBtn.addEventListener('click', startCamera);
+  photoBtn.addEventListener('click', takePhoto);
+  recordBtn.addEventListener('click', () => recording ? stopRecording() : startRecording());
+  flipBtn.addEventListener('click', async () => { facingMode = facingMode === 'environment' ? 'user' : 'environment'; await startCamera(); showToast(facingMode === 'user' ? 'Фронтальная камера' : 'Основная камера'); });
+  document.querySelectorAll('.mode').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+  addEventListener('resize', fitCanvas);
+  addEventListener('orientationchange', () => setTimeout(fitCanvas, 250));
+
+  // Try auto-start; mobile browsers may still require the big button.
+  if(navigator.mediaDevices && location.protocol !== 'file:') setTimeout(startCamera, 350);
+})();
+</script>
+</body>
+</html>
