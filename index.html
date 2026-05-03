@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>LIVE Phone Stream</title>
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:white;font-family:Arial,system-ui,sans-serif}
+    main{position:relative;width:100vw;height:100vh;height:100dvh;overflow:hidden;background:#000}
+    video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:radial-gradient(circle at top,#27364d,#020617 65%)}
+    .shade{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,.12) 40%,rgba(0,0,0,.9));pointer-events:none}
+    .hidden{display:none!important}
+    .top{position:absolute;z-index:5;left:0;right:0;top:0;padding:calc(14px + env(safe-area-inset-top)) 14px 0;display:flex;justify-content:space-between;align-items:flex-start}
+    .row{display:flex;gap:8px;align-items:center}.col{display:grid;gap:8px}
+    .live{background:#ef233c;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:900;box-shadow:0 10px 28px #ef233c66}
+    .pill,.card,.circle,.side button,.chip button,.inputbar,.panel{background:rgba(0,0,0,.46);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 12px 40px rgba(0,0,0,.25)}
+    .pill{border-radius:999px;padding:8px 11px;font-size:13px;font-weight:800}
+    .card{border-radius:18px;padding:9px 12px;width:fit-content;max-width:220px}.card span{display:block;font-size:11px;color:#ffffff99}.card b{font-size:14px}
+    .circle{width:42px;height:42px;border-radius:999px;color:white;border:0;font-size:18px}
+    .panel{position:absolute;z-index:30;left:14px;right:14px;top:calc(105px + env(safe-area-inset-top));padding:16px;border-radius:26px;background:rgba(10,10,14,.9)}
+    .panel h2{margin:0 0 5px;font-size:18px}.panel p{margin:0 0 14px;color:#ffffffb3;font-size:13px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid button{border:0;border-radius:17px;padding:12px;background:#ffffff1a;color:#fff;font-weight:800;text-align:left}.grid button.active{background:#fff;color:#000}
+    .side{position:absolute;z-index:8;right:10px;top:50%;transform:translateY(-50%);display:grid;gap:15px}.side button{width:56px;min-height:64px;border:0;border-radius:21px;color:white;display:grid;place-items:center}.side span{font-size:25px}.side b{font-size:11px}
+    .chat{position:absolute;z-index:7;left:10px;right:73px;bottom:calc(118px + env(safe-area-inset-bottom));max-height:39vh;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:7px}
+    .msg{width:fit-content;max-width:100%;padding:9px 11px;border-radius:17px;background:rgba(0,0,0,.45);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-size:14px;line-height:1.22;animation:in .22s ease both}.msg strong{margin:0 4px}.donation{border:1px solid #ffe47888;background:rgba(245,158,11,.34)}.system{border:1px solid #67e8f966;background:rgba(8,145,178,.34)}.me{background:rgba(255,255,255,.24)}
+    @keyframes in{from{opacity:0;transform:translateX(-12px) translateY(7px)}to{opacity:1;transform:none}}
+    .bottom{position:absolute;z-index:10;left:0;right:0;bottom:0;padding:0 10px calc(12px + env(safe-area-inset-bottom))}
+    .chip{display:flex;gap:8px;overflow-x:auto;padding-bottom:9px;scrollbar-width:none}.chip::-webkit-scrollbar{display:none}.chip button{flex:0 0 auto;border:0;border-radius:999px;padding:10px 13px;color:#fff;font-weight:850}
+    .inputbar{min-height:58px;border-radius:999px;padding:7px;display:flex;align-items:center;gap:8px}.inputbar input{flex:1;min-width:0;height:42px;border:0;outline:0;background:transparent;color:white;font-size:15px}.inputbar input::placeholder{color:#ffffff8f}
+    .mic,.send{border:0;border-radius:999px;height:43px;display:grid;place-items:center;font-weight:900}.mic{width:43px;background:#ffffff1f;color:white}.send{width:52px;background:#fff;color:#000;font-size:18px}
+    .error{position:absolute;z-index:100;inset:0;display:grid;place-items:center;background:#020617;padding:22px;text-align:center}.error div{max-width:360px;padding:26px;border-radius:28px;background:#ffffff14;border:1px solid #ffffff1f}.error h1{margin:8px 0}.error p{margin:0;color:#ffffffb3}
+    button{cursor:pointer}button:active{transform:scale(.96)}
+  </style>
+</head>
+<body>
+<main id="root">
+  <video id="camera" autoplay playsinline muted></video>
+  <div class="shade"></div>
+
+  <section id="cameraError" class="error hidden">
+    <div><div style="font-size:44px">📷</div><h1>Камера не включилась</h1><p>Разреши доступ к камере. На GitHub Pages камера работает через HTTPS. В некоторых браузерах надо открыть сайт заново и нажать Allow.</p></div>
+  </section>
+
+  <header class="top">
+    <div class="col">
+      <div class="row"><span class="live">● LIVE</span><span id="timer" class="pill">00:00</span></div>
+      <div class="card"><span>Сейчас</span><b id="ctx">Просто общаюсь</b></div>
+    </div>
+    <div class="col" style="align-items:end">
+      <div class="pill">👥 <span id="viewers">10,4K</span></div>
+      <button id="settings" class="circle">⚙️</button>
+    </div>
+  </header>
+
+  <aside id="panel" class="panel hidden">
+    <h2>ИИ-контекст чата</h2>
+    <p>Выбери ситуацию, и чат будет писать по теме.</p>
+    <div id="scenarioGrid" class="grid"></div>
+  </aside>
+
+  <section class="side">
+    <button id="likeBtn"><span>♥</span><b id="likes">1,2K</b></button>
+    <button id="chatBtn"><span>💬</span><b>чат</b></button>
+    <button id="donateBtn"><span>💸</span><b id="donTotal">0₽</b></button>
+  </section>
+
+  <section id="chat" class="chat"></section>
+
+  <footer class="bottom">
+    <div id="chips" class="chip"></div>
+    <form id="form" class="inputbar">
+      <button type="button" class="mic">🎙️</button>
+      <input id="input" autocomplete="off" placeholder="Написать в чат или действие...">
+      <button type="submit" class="send">➤</button>
+    </form>
+  </footer>
+</main>
+
+<script>
+(function(){
+  const $ = (s) => document.querySelector(s);
+  const camera = $("#camera"), cameraError = $("#cameraError"), chat = $("#chat");
+  const viewersEl = $("#viewers"), likesEl = $("#likes"), timerEl = $("#timer"), ctx = $("#ctx");
+  const settings = $("#settings"), panel = $("#panel"), scenarioGrid = $("#scenarioGrid"), chips = $("#chips");
+  const likeBtn = $("#likeBtn"), chatBtn = $("#chatBtn"), donateBtn = $("#donateBtn"), donTotal = $("#donTotal");
+  const form = $("#form"), input = $("#input");
+
+  const names = ["Артём","Маша","Даня","Кирилл","Лера","Никита","Соня","Илья","Вика","Рома","Макс","Алина","Егор","Катя","Дима","Настя","Vlad","NikitaLive","StreetFan","Котик"];
+  const avatars = ["😎","🔥","💜","🚀","🎧","👑","🐻","⚡","🌙","⭐","💎","🫶","🏆","🎮"];
+  const scenarios = {
+    chill:{label:"Просто общаюсь",comments:["Нравится такой спокойный формат","Отвечай на вопросы, тут много новых","Атмосфера как у большого стримера","Чат сегодня очень активный","Продолжай, интересно слушать"],actions:["Ответить на вопрос","Попросить лайк","Рассказать историю","Сделать Q&A"]},
+    walking:{label:"Иду на улице",comments:["Камера как будто реально с улицы, вайб топ 🔥","О, город красиво смотрится на фоне","Иди аккуратно, чат с тобой","Вот это живой стрим, не постановка","Свет сейчас прям кинематографичный"],actions:["Показать вид","Поздороваться","Ускорить шаг","Остановиться"]},
+    car:{label:"Еду в машине",comments:["Дорога выглядит спокойно, только не отвлекайся 🙏","Стрим из машины — это мощно","Салон красиво подсвечивается","Чат, пристегнулись?","Едешь аккуратно, красавчик","Не смотри в чат за рулём, безопасность важнее"],actions:["Повернуть камеру","Сказать куда еду","Показать дорогу","Включить музыку"]},
+    food:{label:"Еда / кафе",comments:["Вот это выглядит вкусно, теперь все голодные","Чат требует обзор еды","Сколько по цене вышло?","Кафе уютное, норм место","Сделай честную оценку от 1 до 10"],actions:["Показать еду","Оценить вкус","Показать меню","Сделать заказ"]},
+    gaming:{label:"Играю / телефон",comments:["Жёсткий момент, не моргай","Чат верит в победу","Красиво сыграл!","Сейчас будет хайлайт","Вот это реакция, машина"],actions:["Сделать хайлайт","Ответить чату","Начать катку","Праздновать"]}
+  };
+  const donations = [{name:"Миша",amount:50,text:"на удачу!"},{name:"Алина",amount:100,text:"стрим топ 🔥"},{name:"Даня",amount:250,text:"держи донат"},{name:"Vlad",amount:500,text:"красавчик, продолжай"},{name:"Котик",amount:1000,text:"лучший эфир сегодня"},{name:"Неизвестный",amount:1500,text:"за атмосферу"}];
+
+  let current = "chill", viewers = 10420, target = 18600, likes = 1280, total = 0, started = Date.now();
+
+  function rnd(a){return a[Math.floor(Math.random()*a.length)]}
+  function clamp(v,min,max){return Math.min(max,Math.max(min,v))}
+  function fmt(v){if(v>=1000){let n=v/1000;return (n>=10?n.toFixed(1):n.toFixed(2)).replace(".",",")+"K"}return String(v)}
+  function safe(t){return String(t).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+  function addMessage(name, avatar, text, type){
+    const el = document.createElement("div");
+    el.className = "msg " + (type || "");
+    el.innerHTML = "<span>"+safe(avatar)+"</span> <strong>"+safe(name)+"</strong><span>"+safe(text)+"</span>";
+    chat.appendChild(el);
+    while(chat.children.length > 9) chat.removeChild(chat.firstElementChild);
+  }
+
+  function ai(action){
+    const sc = scenarios[current];
+    const actionText = action ? [
+      "Вот это момент: " + action.toLowerCase() + " 👀",
+      "Нормально зашло, когда ты решил: " + action.toLowerCase(),
+      "Чат заметил действие: " + action.toLowerCase() + " 🔥",
+      "Продолжай в таком стиле, " + action.toLowerCase() + " — хороший ход"
+    ] : [];
+    const text = action && Math.random() > .42 ? rnd(actionText) : rnd(sc.comments);
+    addMessage(rnd(names), rnd(avatars), text, "");
+  }
+
+  function donation(){
+    const d = rnd(donations);
+    total += d.amount;
+    donTotal.textContent = total.toLocaleString("ru-RU") + "₽";
+    addMessage(d.name, "💸", d.amount.toLocaleString("ru-RU") + " ₽ — " + d.text, "donation");
+  }
+
+  function update(){
+    viewersEl.textContent = fmt(Math.round(viewers));
+    likesEl.textContent = fmt(likes);
+  }
+
+  function action(a){
+    ai(a);
+    setTimeout(() => ai(a), 500);
+    likes += Math.floor(Math.random()*30)+8;
+    target = clamp(target + Math.floor(Math.random()*2600)+400, 10000, 100000);
+    update();
+  }
+
+  function renderScenarios(){
+    scenarioGrid.innerHTML = "";
+    Object.keys(scenarios).forEach(key => {
+      const b = document.createElement("button");
+      b.textContent = scenarios[key].label;
+      b.className = key === current ? "active" : "";
+      b.onclick = () => {
+        current = key;
+        ctx.textContent = scenarios[key].label;
+        panel.classList.add("hidden");
+        renderScenarios();
+        renderChips();
+        addMessage("LiveBot","🤖","Контекст изменён: " + scenarios[key].label + ". Комментарии будут по теме.","system");
+      };
+      scenarioGrid.appendChild(b);
+    });
+  }
+
+  function renderChips(){
+    chips.innerHTML = "";
+    scenarios[current].actions.forEach(a => {
+      const b = document.createElement("button");
+      b.textContent = "⚡ " + a;
+      b.onclick = () => action(a);
+      chips.appendChild(b);
+    });
+  }
+
+  async function startCamera(){
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1080},height:{ideal:1920}},audio:false});
+      camera.srcObject = stream;
+    }catch(e){
+      cameraError.classList.remove("hidden");
+    }
+  }
+
+  settings.onclick = () => panel.classList.toggle("hidden");
+  likeBtn.onclick = () => { likes++; update(); };
+  chatBtn.onclick = () => action("ответить чату");
+  donateBtn.onclick = () => { donation(); target = clamp(target + 1200, 10000, 100000); };
+
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if(!text) return;
+    addMessage("Ты","🎥",text,"me");
+    input.value = "";
+    setTimeout(() => ai(text), 650);
+  };
+
+  setInterval(() => {
+    const diff = target - viewers;
+    viewers = Math.abs(diff) < 12 ? target : viewers + diff * .035;
+    update();
+  }, 300);
+
+  setInterval(() => {
+    target = clamp(target + Math.round((Math.random() - .34) * 9000), 10000, 100000);
+  }, 6500);
+
+  setInterval(() => {
+    ai();
+    if(Math.random() > .65){ likes += Math.floor(Math.random()*9)+1; update(); }
+  }, 2200);
+
+  setInterval(() => {
+    if(Math.random() > .5) donation();
+  }, 8500);
+
+  setInterval(() => {
+    const s = Math.floor((Date.now() - started)/1000);
+    timerEl.textContent = String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0");
+  }, 1000);
+
+  renderScenarios();
+  renderChips();
+  update();
+  startCamera();
+  addMessage("LiveBot","🤖","Эфир запущен. Чат реагирует на ситуацию и твои действия.","system");
+  ai(); ai();
+})();
+</script>
+</body>
+</html>
